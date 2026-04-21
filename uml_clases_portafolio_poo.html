@@ -1,0 +1,112 @@
+
+<div id="diagram" style="width:100%;overflow-x:auto;padding:8px 0"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    primaryColor: dark ? '#1a2740' : '#E6F1FB',
+    primaryBorderColor: dark ? '#378ADD' : '#185FA5',
+    primaryTextColor: dark ? '#B5D4F4' : '#042C53',
+    secondaryColor: dark ? '#1e2e1e' : '#EAF3DE',
+    secondaryBorderColor: dark ? '#639922' : '#3B6D11',
+    secondaryTextColor: dark ? '#C0DD97' : '#173404',
+    tertiaryColor: dark ? '#2a1e2e' : '#EEEDFE',
+    tertiaryBorderColor: dark ? '#7F77DD' : '#534AB7',
+    tertiaryTextColor: dark ? '#CECBF6' : '#26215C',
+    lineColor: dark ? '#9c9a92' : '#5F5E5A',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    background: 'transparent',
+    classText: dark ? '#B5D4F4' : '#042C53',
+  }
+});
+
+const diagram = `classDiagram
+  direction TB
+
+  class Cliente {
+    <<abstract>>
+    -String id
+    -String nombre
+    -boolean presenteFisicamente
+    +getId() String
+    +getNombre() String
+    +isPresenteFisicamente() boolean
+    +setPresenteFisicamente(boolean) void
+    +obtenerTipoCliente()* String
+    +equals(Object) boolean
+    +hashCode() int
+    +toString() String
+  }
+
+  class ClienteEstandar {
+    +ClienteEstandar(String, String, boolean)
+    +obtenerTipoCliente() String
+  }
+
+  class ClienteVIP {
+    +ClienteVIP(String, String, boolean)
+    +obtenerTipoCliente() String
+  }
+
+  class IGestionTienda {
+    <<interface>>
+    +registrarApartado(Cliente) boolean
+    +registrarApartado(String, String) boolean
+    +getEspaciosDisponibles() int
+  }
+
+  class Tienda {
+    -int LIMITE_APARTADOS$
+    -List~Cliente~ apartadosRealizados
+    +Tienda()
+    +registrarApartado(Cliente) boolean
+    +registrarApartado(String, String) boolean
+    +getEspaciosDisponibles() int
+    +getApartadosRealizados() List~Cliente~
+  }
+
+  class Main {
+    +main(String[])$ void
+  }
+
+  Cliente <|-- ClienteEstandar : herencia
+  Cliente <|-- ClienteVIP : herencia
+  IGestionTienda <|.. Tienda : implementa
+  Tienda *-- Cliente : composicion
+  Tienda ..> ClienteEstandar : dependencia
+  Main ..> IGestionTienda : usa
+  Main ..> ClienteEstandar : crea
+  Main ..> ClienteVIP : crea
+`;
+
+const { svg } = await mermaid.render('uml-svg', diagram);
+document.getElementById('diagram').innerHTML = svg;
+
+document.querySelectorAll('#diagram svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = nums.filter((_, i) => i % 2 === 0);
+  const ys = nums.filter((_, i) => i % 2 === 1);
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+</script>
